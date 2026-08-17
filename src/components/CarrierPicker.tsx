@@ -1,5 +1,5 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { CARRIERS } from '../config/carriers';
+import { CARRIERS, isApiCarrier } from '../config/carriers';
 import { colors, radii, spacing, typography } from '../theme/theme';
 
 interface CarrierPickerProps {
@@ -12,6 +12,7 @@ export function CarrierPicker({ selectedId, onSelect }: CarrierPickerProps) {
     <View style={styles.grid}>
       {CARRIERS.map((carrier) => {
         const selected = carrier.id === selectedId;
+        const live = isApiCarrier(carrier);
         return (
           <Pressable
             key={carrier.id}
@@ -22,6 +23,11 @@ export function CarrierPicker({ selectedId, onSelect }: CarrierPickerProps) {
             <Text style={[styles.label, selected && styles.labelSelected]} numberOfLines={1}>
               {carrier.name}
             </Text>
+            <View style={[styles.badge, live ? styles.badgeLive : styles.badgeExternal]}>
+              <Text style={[styles.badgeText, live ? styles.badgeTextLive : styles.badgeTextExternal]}>
+                {live ? 'Tracking live' : 'Link al sito'}
+              </Text>
+            </View>
           </Pressable>
         );
       })}
@@ -37,7 +43,7 @@ const styles = StyleSheet.create({
   },
   chip: {
     width: '31%',
-    aspectRatio: 1,
+    aspectRatio: 0.85,
     borderRadius: radii.md,
     borderWidth: 1.5,
     borderColor: colors.separator,
@@ -53,7 +59,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: '70%',
-    height: 32,
+    height: 28,
   },
   label: {
     ...typography.small,
@@ -63,5 +69,28 @@ const styles = StyleSheet.create({
   labelSelected: {
     color: colors.accent,
     fontWeight: '700',
+  },
+  badge: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radii.pill,
+  },
+  badgeLive: {
+    backgroundColor: '#E3F7EA',
+  },
+  badgeExternal: {
+    backgroundColor: '#F0F0F2',
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  badgeTextLive: {
+    color: colors.success,
+  },
+  badgeTextExternal: {
+    color: colors.textTertiary,
   },
 });

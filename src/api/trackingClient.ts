@@ -1,91 +1,67 @@
-import { trackingApiConfig } from '../config/env';
-import { parseGetTrackInfoResponse } from './parseTrackInfo';
-import type { ParsedTrackResult, RawGetTrackInfoResponse } from './types';
+import type { ApiCarrier, ApiProvider } from '../config/carriers';
+import { isProviderConfigured, trackingApiConfig } from '../config/env';
+import { fetchDhlTrackingRaw, parseDhlResponse } from './providers/dhl';
+import { fetchFedexTrackingRaw, parseFedexResponse } from './providers/fedex';
+import { fetchUpsTrackingRaw, parseUpsResponse } from './providers/ups';
+import type { ParsedTrackResult } from './types';
 
 export class TrackingApiNotConfiguredError extends Error {
-  constructor() {
+  constructor(provider: ApiProvider) {
     super(
-      'Nessuna configurazione per la tracking API: imposta EXPO_PUBLIC_TRACKING_PROXY_URL ' +
-        'oppure EXPO_PUBLIC_TRACKING_API_KEY (vedi README).',
+      `Nessuna configurazione per l'API ${provider.toUpperCase()}: imposta EXPO_PUBLIC_TRACKING_PROXY_URL ` +
+        `oppure le credenziali dirette del corriere (vedi README).`,
     );
     this.name = 'TrackingApiNotConfiguredError';
   }
 }
 
-interface TrackingItem {
-  trackingNumber: string;
-  carrierApiCode: number;
-}
-
-// 17TRACK accepts at most 40 tracking numbers per batch call.
-const MAX_BATCH_SIZE = 40;
-
-function chunk<T>(items: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < items.length; i += size) {
-    chunks.push(items.slice(i, i + size));
-  }
-  return chunks;
-}
-
-async function post<T>(path: string, body: unknown): Promise<T> {
-  if (!trackingApiConfig.isConfigured) {
-    throw new TrackingApiNotConfiguredError();
-  }
-
-  const usingProxy = Boolean(trackingApiConfig.proxyUrl);
-  const url = usingProxy
-    ? `${trackingApiConfig.proxyUrl!.replace(/\/$/, '')}${path}`
-    : `${trackingApiConfig.directBaseUrl}${path}`;
-
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (!usingProxy) {
-    headers['17token'] = trackingApiConfig.directApiKey!;
-  }
-
-  const response = await fetch(url, {
+/** Fetches the raw upstream JSON via the proxy Worker — same shape as calling the carrier directly, so parsing is identical either way. */
+async function fetchViaProxy(provider: ApiProvider, trackingNumber: string): Promise<unknown> {
+  const response = await fetch(`${trackingApiConfig.proxyUrl!.replace(/\/$/, '')}/${provider}/track`, {
     method: 'POST',
-    headers,
-    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ trackingNumber }),
   });
-
   if (!response.ok) {
     throw new Error(`Richiesta tracking fallita (${response.status})`);
   }
-
-  return (await response.json()) as T;
+  return response.json();
 }
 
-/** Registers tracking numbers with the aggregator so it starts polling the real carrier. Safe to call again for an already-registered number. */
-export async function registerTrackingNumbers(items: TrackingItem[]): Promise<void> {
-  if (items.length === 0) return;
-  const batches = chunk(items, MAX_BATCH_SIZE);
-  for (const batch of batches) {
-    await post('/register', batch.map((item) => ({ number: item.trackingNumber, carrier: item.carrierApiCode })));
+/** Fetches and normalizes current tracking info for a single API-mode shipment (UPS/FedEx/DHL). Throws TrackingApiNotConfiguredError if neither the proxy nor that carrier's direct credentials are set. */
+export async function fetchTrackingForShipment(
+  carrier: ApiCarrier,
+  trackingNumber: string,
+): Promise<ParsedTrackResult> {
+  if (!isProviderConfigured(carrier.apiProvider)) {
+    throw new TrackingApiNotConfiguredError(carrier.apiProvider);
   }
-}
+  const useProxy = Boolean(trackingApiConfig.proxyUrl);
 
-/** Fetches current status + full event history for the given tracking numbers, already registered. */
-export async function fetchTrackInfo(items: TrackingItem[]): Promise<Map<string, ParsedTrackResult>> {
-  if (items.length === 0) return new Map();
-  const merged = new Map<string, ParsedTrackResult>();
-  const batches = chunk(items, MAX_BATCH_SIZE);
-  for (const batch of batches) {
-    const raw = await post<RawGetTrackInfoResponse>(
-      '/gettrackinfo',
-      batch.map((item) => ({ number: item.trackingNumber, carrier: item.carrierApiCode })),
-    );
-    const parsed = parseGetTrackInfoResponse(raw);
-    for (const [trackingNumber, result] of parsed) {
-      merged.set(trackingNumber, result);
+  switch (carrier.apiProvider) {
+    case 'ups': {
+      const raw = useProxy
+        ? await fetchViaProxy('ups', trackingNumber)
+        : await fetchUpsTrackingRaw(trackingNumber, {
+            clientId: trackingApiConfig.direct.ups.clientId!,
+            clientSecret: trackingApiConfig.direct.ups.clientSecret!,
+          });
+      return parseUpsResponse(raw as Parameters<typeof parseUpsResponse>[0], trackingNumber);
+    }
+    case 'fedex': {
+      const raw = useProxy
+        ? await fetchViaProxy('fedex', trackingNumber)
+        : await fetchFedexTrackingRaw(trackingNumber, {
+            clientId: trackingApiConfig.direct.fedex.clientId!,
+            clientSecret: trackingApiConfig.direct.fedex.clientSecret!,
+          });
+      return parseFedexResponse(raw as Parameters<typeof parseFedexResponse>[0], trackingNumber);
+    }
+    case 'dhl': {
+      const raw = useProxy
+        ? await fetchViaProxy('dhl', trackingNumber)
+        : await fetchDhlTrackingRaw(trackingNumber, { apiKey: trackingApiConfig.direct.dhl.apiKey! });
+      return parseDhlResponse(raw as Parameters<typeof parseDhlResponse>[0], trackingNumber);
     }
   }
-  return merged;
-}
-
-/** Convenience: registers (idempotent) then immediately fetches current info for a single shipment. */
-export async function trackSingleShipment(item: TrackingItem): Promise<ParsedTrackResult | null> {
-  await registerTrackingNumbers([item]);
-  const results = await fetchTrackInfo([item]);
-  return results.get(item.trackingNumber) ?? null;
 }

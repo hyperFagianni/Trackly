@@ -66,8 +66,13 @@ export default function HomeScreen() {
       <LinearGradient colors={[colors.backgroundTop, colors.backgroundBottom]} style={StyleSheet.absoluteFill} />
       <Stack.Screen
         options={{
+          headerLeft: () => (
+            <Pressable onPress={() => router.push('/info')} hitSlop={12} style={styles.iconButton}>
+              <Ionicons name="information-circle-outline" size={26} color={colors.textSecondary} />
+            </Pressable>
+          ),
           headerRight: () => (
-            <Pressable onPress={() => router.push('/add')} hitSlop={12} style={styles.addButton}>
+            <Pressable onPress={() => router.push('/add')} hitSlop={12} style={styles.iconButton}>
               <Ionicons name="add-circle" size={30} color={colors.accent} />
             </Pressable>
           ),
@@ -99,7 +104,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  addButton: { padding: spacing.xs },
+  iconButton: { padding: spacing.xs },
   listContent: {
     padding: spacing.lg,
     flexGrow: 1,

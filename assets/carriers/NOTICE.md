@@ -1,8 +1,9 @@
 # Carrier logo attribution
 
 The files in this folder are trademarked logos owned by their respective courier
-companies (DHL, UPS, FedEx, TNT, GLS, Amazon, Poste Italiane, BRT, SDA). They are
-bundled locally, at a small fixed resolution, for **referential use only** — to let
+companies (DHL, UPS, FedEx, TNT, GLS, Amazon, Poste Italiane, BRT, SDA, InPost,
+Vinted). They are bundled locally, at a small fixed resolution, for **referential
+use only** — to let
 a user visually identify which real-world carrier is handling a given shipment
 inside their own tracking list. This is the same nominative-fair-use pattern every
 shipment-tracking app (17TRACK, AfterShip, Parcel, …) relies on: the marks are not
@@ -19,6 +20,10 @@ Source (Wikimedia Commons, retrieved 2026-08-17):
 - poste_italiane.png — https://commons.wikimedia.org/wiki/File:Logo_Poste_Italiane.svg
 - brt.png — https://commons.wikimedia.org/wiki/File:Logo_BRT.svg
 - sda.png — https://commons.wikimedia.org/wiki/File:SDA_logo.svg
+- inpost.png — https://commons.wikimedia.org/wiki/File:InPost_logo.svg
+- vinted_go.png — https://commons.wikimedia.org/wiki/File:Vinted_Logo_2022.svg (Vinted Go
+  is Vinted's own delivery service; no separate "Vinted Go" mark exists on Commons, so
+  the parent Vinted wordmark is used to identify it)
 
 If you plan to publish this app to production (not just personal/closed testing),
 replace these with each carrier's own official brand/press-kit asset where one is

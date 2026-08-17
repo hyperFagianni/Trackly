@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { getCarrierById } from '../config/carriers';
+import { getCarrierById, isApiCarrier } from '../config/carriers';
 import { colors, radii, spacing, typography } from '../theme/theme';
 import type { Shipment } from '../types/shipment';
 import { formatRelativeTime } from '../utils/format';
@@ -27,6 +27,8 @@ export function ShipmentCard({ shipment, onPress, onDelete, onToggleNotification
   const startX = useSharedValue(0);
   const carrier = getCarrierById(shipment.carrierId);
   const carrierName = carrier?.name ?? shipment.carrierId;
+  const live = carrier ? isApiCarrier(carrier) : false;
+  const maxLeftSwipe = live ? MAX_TRANSLATE : 0;
 
   const close = () => {
     'worklet';
@@ -61,12 +63,12 @@ export function ShipmentCard({ shipment, onPress, onDelete, onToggleNotification
     })
     .onUpdate((event) => {
       const next = startX.value + event.translationX;
-      translateX.value = Math.max(-MAX_TRANSLATE, Math.min(MAX_TRANSLATE, next));
+      translateX.value = Math.max(-maxLeftSwipe, Math.min(MAX_TRANSLATE, next));
     })
     .onEnd(() => {
       if (translateX.value > OPEN_THRESHOLD) {
         translateX.value = withSpring(ACTION_WIDTH, SPRING_CONFIG);
-      } else if (translateX.value < -OPEN_THRESHOLD) {
+      } else if (live && translateX.value < -OPEN_THRESHOLD) {
         translateX.value = withSpring(-ACTION_WIDTH, SPRING_CONFIG);
       } else {
         translateX.value = withSpring(0, SPRING_CONFIG);
@@ -93,15 +95,17 @@ export function ShipmentCard({ shipment, onPress, onDelete, onToggleNotification
         </Pressable>
       </Animated.View>
 
-      <Animated.View style={[styles.actionRight, rightActionStyle]} pointerEvents="box-none">
-        <Pressable onPress={handleToggleNotifications} style={styles.actionButton} hitSlop={8}>
-          <Ionicons
-            name={shipment.notificationsEnabled ? 'notifications-off' : 'notifications'}
-            size={22}
-            color={colors.white}
-          />
-        </Pressable>
-      </Animated.View>
+      {live && (
+        <Animated.View style={[styles.actionRight, rightActionStyle]} pointerEvents="box-none">
+          <Pressable onPress={handleToggleNotifications} style={styles.actionButton} hitSlop={8}>
+            <Ionicons
+              name={shipment.notificationsEnabled ? 'notifications-off' : 'notifications'}
+              size={22}
+              color={colors.white}
+            />
+          </Pressable>
+        </Animated.View>
+      )}
 
       <GestureDetector gesture={pan}>
         <Animated.View style={cardStyle}>
@@ -115,13 +119,26 @@ export function ShipmentCard({ shipment, onPress, onDelete, onToggleNotification
                 <Text style={styles.subtitle} numberOfLines={1}>
                   {carrierName} · {shipment.trackingNumber}
                 </Text>
-                <StatusBadge status={shipment.status} />
+                {live ? (
+                  <StatusBadge status={shipment.status} />
+                ) : (
+                  <View style={styles.externalBadge}>
+                    <Ionicons name="open-outline" size={11} color={colors.textSecondary} />
+                    <Text style={styles.externalBadgeText}>Apri sul sito del corriere</Text>
+                  </View>
+                )}
               </View>
               <View style={styles.meta}>
-                {!shipment.notificationsEnabled && (
-                  <Ionicons name="notifications-off-outline" size={15} color={colors.textTertiary} />
+                {live ? (
+                  <>
+                    {!shipment.notificationsEnabled && (
+                      <Ionicons name="notifications-off-outline" size={15} color={colors.textTertiary} />
+                    )}
+                    <Text style={styles.time}>{formatRelativeTime(shipment.lastCheckedAt)}</Text>
+                  </>
+                ) : (
+                  <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
                 )}
-                <Text style={styles.time}>{formatRelativeTime(shipment.lastCheckedAt)}</Text>
               </View>
             </GlassCard>
           </Pressable>
@@ -181,6 +198,16 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...typography.caption,
+    color: colors.textSecondary,
+  },
+  externalBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+  },
+  externalBadgeText: {
+    ...typography.small,
     color: colors.textSecondary,
   },
   meta: {

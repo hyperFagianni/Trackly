@@ -1,9 +1,8 @@
-import { fetchTrackInfo } from '../api/trackingClient';
-import type { ParsedTrackResult } from '../api/types';
-import { getCarrierById } from '../config/carriers';
+import { fetchTrackingForShipment } from '../api/trackingClient';
+import { getCarrierById, isApiCarrier } from '../config/carriers';
 import { updateTrackingResult } from '../db/shipmentsRepository';
-import { buildStatusChangeNotification, hasStatusChanged, type StatusSnapshot } from '../notifications/statusDiff';
 import { sendShipmentNotification } from '../notifications/notificationService';
+import { buildStatusChangeNotification, hasStatusChanged, type StatusSnapshot } from '../notifications/statusDiff';
 import type { Shipment } from '../types/shipment';
 
 export interface SyncResult {
@@ -13,46 +12,46 @@ export interface SyncResult {
 }
 
 /**
- * Fetches fresh tracking info for the given shipments, persists it, and fires
- * a local notification for each one whose status meaningfully changed (when
- * `notify` is true and that shipment has notifications enabled). Shared by
- * both the background task and the home screen's pull-to-refresh, so the
- * "did this actually change" decision is made in exactly one place.
+ * Fetches fresh tracking info for the given shipments (skipping any whose
+ * carrier has no live API — see src/config/carriers.ts), persists it, and
+ * fires a local notification for each one whose status meaningfully changed
+ * (when `notify` is true and that shipment has notifications enabled).
+ * Shared by both the background task and pull-to-refresh, so the "did this
+ * actually change" decision is made in exactly one place.
  */
 export async function syncShipments(shipments: Shipment[], options?: { notify?: boolean }): Promise<SyncResult> {
   const notify = options?.notify ?? true;
-  if (shipments.length === 0) {
-    return { updated: [], notifiedCount: 0, failedCount: 0 };
-  }
 
   const trackableItems = shipments
     .map((shipment) => {
       const carrier = getCarrierById(shipment.carrierId);
-      return carrier ? { shipment, trackingNumber: shipment.trackingNumber, carrierApiCode: carrier.trackingApiCarrierCode } : null;
+      return carrier && isApiCarrier(carrier) ? { shipment, carrier } : null;
     })
-    .filter((item): item is { shipment: Shipment; trackingNumber: string; carrierApiCode: number } => item !== null);
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 
-  let resultsMap: Map<string, ParsedTrackResult>;
-  try {
-    resultsMap = await fetchTrackInfo(
-      trackableItems.map(({ trackingNumber, carrierApiCode }) => ({ trackingNumber, carrierApiCode })),
-    );
-  } catch (error) {
-    console.warn('Sincronizzazione spedizioni fallita:', error);
-    return { updated: [], notifiedCount: 0, failedCount: trackableItems.length };
+  if (trackableItems.length === 0) {
+    return { updated: [], notifiedCount: 0, failedCount: 0 };
   }
+
+  const results = await Promise.allSettled(
+    trackableItems.map(({ shipment, carrier }) => fetchTrackingForShipment(carrier, shipment.trackingNumber)),
+  );
 
   const updated: Shipment[] = [];
   let notifiedCount = 0;
   let failedCount = 0;
 
-  for (const { shipment, trackingNumber } of trackableItems) {
-    const parsed = resultsMap.get(trackingNumber);
-    if (!parsed) {
+  for (let i = 0; i < trackableItems.length; i++) {
+    const { shipment } = trackableItems[i];
+    const result = results[i];
+
+    if (result.status === 'rejected') {
+      console.warn(`Aggiornamento tracking fallito per ${shipment.trackingNumber}:`, result.reason);
       failedCount++;
       continue;
     }
 
+    const parsed = result.value;
     const previousSnapshot: StatusSnapshot = {
       status: shipment.status,
       lastEventAt: shipment.lastEventAt,

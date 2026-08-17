@@ -12,10 +12,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { trackSingleShipment } from '../src/api/trackingClient';
+import { fetchTrackingForShipment } from '../src/api/trackingClient';
 import { CarrierPicker } from '../src/components/CarrierPicker';
 import { GlassCard } from '../src/components/GlassCard';
-import { getCarrierById } from '../src/config/carriers';
+import { getCarrierById, isApiCarrier } from '../src/config/carriers';
 import { insertShipment, updateTrackingResult } from '../src/db/shipmentsRepository';
 import { requestNotificationPermission } from '../src/notifications/notificationService';
 import { colors, radii, spacing, typography } from '../src/theme/theme';
@@ -43,21 +43,18 @@ export default function AddShipmentScreen() {
 
       // Best-effort first fetch: the shipment is already saved either way, and
       // will pick up data on the next pull-to-refresh or background sync.
+      // Carriers without a live API (see src/config/carriers.ts) simply skip this.
       const carrier = getCarrierById(carrierId);
-      if (carrier) {
-        trackSingleShipment({
-          trackingNumber: shipment.trackingNumber,
-          carrierApiCode: carrier.trackingApiCarrierCode,
-        })
-          .then((result) => {
-            if (!result) return;
-            return updateTrackingResult(shipment.id, {
+      if (carrier && isApiCarrier(carrier)) {
+        fetchTrackingForShipment(carrier, shipment.trackingNumber)
+          .then((result) =>
+            updateTrackingResult(shipment.id, {
               status: result.status,
               statusDescription: result.statusDescription,
               lastEventAt: result.lastEventAt,
               events: result.events,
-            });
-          })
+            }),
+          )
           .catch((error) => console.warn('Primo recupero tracking fallito:', error));
       }
     } catch (error) {

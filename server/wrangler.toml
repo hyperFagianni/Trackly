@@ -2,6 +2,12 @@ name = "trackly-tracking-proxy"
 main = "src/index.ts"
 compatibility_date = "2026-08-17"
 
-# Set the real secret with:
-#   npx wrangler secret put TRACK17_API_KEY
-# Never commit the actual key value anywhere in this repo.
+# Set each real secret with (repeat per name below):
+#   npx wrangler secret put UPS_CLIENT_ID
+#   npx wrangler secret put UPS_CLIENT_SECRET
+#   npx wrangler secret put FEDEX_CLIENT_ID
+#   npx wrangler secret put FEDEX_CLIENT_SECRET
+#   npx wrangler secret put DHL_API_KEY
+# You only need to set the secrets for the carriers you actually use — an
+# unconfigured one just fails for that carrier's shipments, the rest still work.
+# Never commit the actual key values anywhere in this repo.

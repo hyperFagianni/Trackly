@@ -2,7 +2,7 @@
 
 App Expo/React Native per tracciare spedizioni di più corrieri in un'unica home, con notifiche locali per singola spedizione e un'estetica ispirata al "liquid glass" di Apple (glassmorphism, bordi smussati, superfici sfocate).
 
-Costruita per restare **gratuita da gestire**: nessun server proprio necessario per il funzionamento di base (solo, opzionalmente, un piccolo proxy serverless a costo zero — vedi sotto), notifiche locali senza infrastruttura push, storage tutto sul device.
+Costruita per restare **gratuita per sempre**: zero aggregatori a quota limitata — solo API dirette dei singoli corrieri (dove esistono gratis) o un semplice link al sito ufficiale del corriere altrimenti. Nessun server proprio necessario per il funzionamento di base (solo, opzionalmente, un piccolo proxy serverless a costo zero — vedi sotto), notifiche locali senza infrastruttura push, storage tutto sul device.
 
 ## Stack tecnico
 
@@ -12,8 +12,9 @@ Costruita per restare **gratuita da gestire**: nessun server proprio necessario 
 - `expo-background-task` + `expo-task-manager` — controllo periodico dello stato ad app chiusa
 - `expo-blur` + `expo-linear-gradient` — estetica "vetro smerigliato"
 - `react-native-gesture-handler` + `react-native-reanimated` — gesture di swipe sulle card
+- `expo-clipboard` — copia il numero di tracking prima di aprire il sito di un corriere senza API
 - `@expo/vector-icons`, `expo-linking`, `expo-device`, `expo-font`, `expo-constants` — dipendenze di supporto standard dell'ecosistema Expo
-- [17TRACK](https://www.17track.net) come aggregatore di tracciamento multi-corriere
+- API dirette di **UPS**, **FedEx** e **DHL** per il tracciamento live (nessun aggregatore terzo)
 
 **Tutte le librerie sopra funzionano dentro Expo Go** — nessuna richiede una development build. Verificato con `npx expo-doctor` (18/18 check superati) e con `npx tsc --noEmit` pulito.
 
@@ -24,40 +25,54 @@ npm install
 npx expo start
 ```
 
-Scansiona il QR code con l'app Expo Go (Android o iOS). Per testare il tracciamento reale, configura prima la tracking API (sezione successiva) — senza configurazione l'app funziona comunque (aggiunta/rimozione/swipe/notifiche locali di test), semplicemente le spedizioni restano con stato "In attesa di dati".
+Scansiona il QR code con l'app Expo Go (Android o iOS). Per testare il tracciamento live, configura prima la tracking API (sezione successiva) — senza configurazione l'app funziona comunque (aggiunta/rimozione/swipe/notifiche locali di test), semplicemente le spedizioni UPS/FedEx/DHL restano con stato "In attesa di dati".
 
 ## Type-check e test
 
 ```bash
 npm run typecheck   # tsc --noEmit, nessun errore
-npm run test        # jest: logica di confronto stato e parsing risposte API
+npm run test        # jest: logica di confronto stato e parsing risposte delle 3 API
 ```
 
-I test coprono i due punti più delicati della logica: `hasStatusChanged`/`buildStatusChangeNotification` (quando scatta una notifica e con che testo) e `parseTrackInfo` (interpretazione della risposta 17TRACK, inclusi input malformati/incompleti che non devono far crashare l'app).
+I test coprono i punti più delicati della logica: `hasStatusChanged`/`buildStatusChangeNotification` (quando scatta una notifica e con che testo), il parsing di ciascuna delle tre risposte API (UPS/FedEx/DHL, inclusi input malformati/incompleti che non devono far crashare l'app) e l'encoder base64 usato per l'autenticazione UPS.
 
-## Dati di tracciamento: perché 17TRACK
+## Dati di tracciamento: solo API dirette dei corrieri, niente aggregatori
 
-Non esiste un'unica API pubblica gratuita che copra tutti i corrieri. [17TRACK](https://api.17track.net/en/doc) è l'aggregatore che usano anche molte app commerciali di questo tipo: copre migliaia di corrieri con un'unica integrazione, ha un piano gratuito, e la struttura a "corriere curato + estendibile" richiesta si adatta bene al suo modello (`carrier code` numerico per corriere).
+Niente 17TRACK né altri aggregatori multi-corriere: quelli hanno tutti una quota gratuita limitata (crediti una tantum o rinnovo mensile con tetto basso), quindi non sono "gratis per sempre" in senso stretto. Al loro posto, Trackly integra **solo i corrieri che offrono davvero un'API di tracciamento gratuita, self-service, senza bisogno di un contratto commerciale**:
 
-**⚠️ Importante, scoperto durante lo sviluppo (agosto 2026):** 17TRACK ha cambiato la propria policy free il 7 gennaio 2026. Gli account creati prima di quella data hanno ancora 100 tracciamenti gratuiti al mese (rinnovo mensile). **I nuovi account (quindi il tuo, quando ti registrerai ora) ottengono invece 200 crediti gratuiti una tantum, non rinnovabili mensilmente.** Verifica i limiti aggiornati sul tuo pannello 17TRACK prima di affidarti al piano gratuito per un uso continuativo — potresti dover passare a un piano a pagamento se superi la soglia, oppure integrare in futuro le API dirette e gratuite di UPS/FedEx per quei due corrieri specifici.
+| Corriere | API diretta | Verificato il |
+|---|---|---|
+| **UPS** | [developer.ups.com](https://developer.ups.com) — Track API, OAuth2 | 2026-08-17 |
+| **FedEx** | [developer.fedex.com](https://developer.fedex.com) — Track API v1, OAuth2, 100.000 richieste/giorno gratis | 2026-08-17 |
+| **DHL** | [developer.dhl.com](https://developer.dhl.com) — Unified Tracking API, chiave API semplice, 250 richieste/giorno gratis | 2026-08-17 |
 
-Per conservare quota, l'app registra un numero di tracking una sola volta (alla creazione) e nei controlli successivi (pull-to-refresh, background task) chiama solo `gettrackinfo`, non `register` di nuovo.
+**Tutti gli altri corrieri comuni in Italia — Poste Italiane, BRT, GLS, SDA, TNT (ormai rete FedEx), Amazon Logistics, InPost, Vinted Go — richiedono un contratto/account business per accedere alla loro API di tracciamento.** Non esiste per loro un'opzione self-service gratuita, verificato direttamente sui rispettivi siti/portali sviluppatore. Integrarli scraping i loro siti sarebbe l'unica alternativa, ma è esattamente ciò che il vincolo "legale" di questo progetto esclude.
 
-### Come ottenere una chiave
+**La soluzione adottata:** questi corrieri restano comunque nell'app — puoi aggiungerli, rinominarli, eliminarli, vederli nella home con il loro logo — ma invece di uno stato live, aprendo la spedizione trovi un pulsante che copia il numero di tracking negli appunti e apre la pagina di ricerca spedizioni ufficiale del corriere nel browser. Zero notifiche automatiche per questi (non c'è nulla da confrontare), ma restano organizzati in un unico posto. Vedi `src/config/carriers.ts` (campo `trackingMode: 'api' | 'external'`) e la schermata "i" nell'app per il dettaglio.
 
-1. Registrati su [17track.net/en/api](https://www.17track.net/en/api), verifica l'email, entra nel pannello.
-2. Copia il token dalla sezione Impostazioni.
-3. Configuralo con una delle due opzioni sotto.
+**Nota di trasparenza sulle tre API dirette:** UPS, FedEx e DHL sono state verificate come "self-serve gratis" tramite i loro portali/documentazione pubblica, ma il parsing delle risposte (`src/api/providers/{ups,fedex,dhl}.ts`) è stato scritto sulla base della documentazione pubblica, non testato contro un account reale (non disponibile in questo ambiente di sviluppo). È scritto in modo difensivo (fallback a "stato sconosciuto" invece di eccezioni su campi mancanti/diversi), ma vale la pena verificarlo con le tue credenziali reali e aggiustare le funzioni `mapXStatus`/`parseXResponse` se la forma reale differisce leggermente.
+
+### Come ottenere le credenziali
+
+- **UPS:** crea un profilo UPS.com gratuito (basta un account spedizioni personale, nessun contratto business) su [developer.ups.com](https://developer.ups.com), registra un'app, ottieni `client_id`/`client_secret`.
+- **FedEx:** registrati su [developer.fedex.com](https://developer.fedex.com), crea un progetto, ottieni `client_id`/`client_secret` (la Track API base è gratuita).
+- **DHL:** registrati con la sola email su [developer.dhl.com](https://developer.dhl.com), sottoscrivi "Shipment Tracking - Unified Tracking API", ottieni una `DHL-API-Key`.
+
+Puoi configurare anche solo uno o due di questi tre — le spedizioni dei corrieri non configurati mostrano semplicemente "API non configurata" invece di rompere il resto dell'app.
 
 ### Configurazione: due opzioni (vedi `.env.example`)
 
-**Opzione consigliata — proxy serverless.** La cartella [`/server`](./server) contiene un Cloudflare Worker minimale che tiene la chiave 17TRACK come secret lato server e la inoltra; l'app non la vede mai. Resta a costo zero (free tier Cloudflare Workers).
+**Opzione consigliata — proxy serverless.** La cartella [`/server`](./server) contiene un Cloudflare Worker minimale che tiene le credenziali di tutti e tre i corrieri come secret lato server e le inoltra; l'app non le vede mai. Resta a costo zero (free tier Cloudflare Workers).
 
 ```bash
 cd server
 npm install
 npx wrangler login
-npx wrangler secret put TRACK17_API_KEY   # incolla qui la tua chiave 17TRACK
+npx wrangler secret put UPS_CLIENT_ID
+npx wrangler secret put UPS_CLIENT_SECRET
+npx wrangler secret put FEDEX_CLIENT_ID
+npx wrangler secret put FEDEX_CLIENT_SECRET
+npx wrangler secret put DHL_API_KEY
 npm run deploy
 ```
 
@@ -67,40 +82,32 @@ Copia l'URL stampato da `wrangler deploy` (tipo `https://trackly-tracking-proxy.
 EXPO_PUBLIC_TRACKING_PROXY_URL=https://trackly-tracking-proxy.<tuo-subdomain>.workers.dev
 ```
 
-**Opzione più semplice, meno sicura — chiamata diretta dal client.** Salta il Worker e imposta invece:
-
-```
-EXPO_PUBLIC_TRACKING_API_KEY=la-tua-chiave-17track
-```
-
-Qualsiasi variabile con prefisso `EXPO_PUBLIC_` viene inclusa in chiaro nel bundle JS compilato — chiunque può estrarla decompilando l'APK. Accettabile per un progetto hobbistico di uso personale, non per una chiave che vuoi proteggere davvero.
-
-Il codice che parla con 17TRACK è in `src/api/trackingClient.ts` e `src/config/env.ts`; il parsing della risposta è in `src/api/parseTrackInfo.ts`. **Nota di trasparenza:** il parsing è stato scritto sulla base della documentazione pubblica 17TRACK v2.4, non testato contro una risposta reale (in questo ambiente di sviluppo non era disponibile una chiave API). È scritto in modo difensivo (fallback a "stato sconosciuto" invece di eccezioni su campi mancanti/diversi), ma vale la pena verificarlo con un vero account non appena ne hai uno, e aggiustare la mappatura in `mapApiStatus`/`parseAcceptedItem` se la forma reale differisce.
+**Opzione più semplice, meno sicura — chiamata diretta dal client.** Salta il Worker e imposta invece le credenziali dirette (vedi `.env.example` per i nomi esatti delle variabili). Qualsiasi variabile con prefisso `EXPO_PUBLIC_` viene inclusa in chiaro nel bundle JS compilato — chiunque può estrarla decompilando l'APK. Accettabile per un progetto hobbistico di uso personale, non per credenziali che vuoi proteggere davvero.
 
 ## Corrieri inclusi
 
-Lista curata iniziale (estendibile aggiungendo una voce in `src/config/carriers.ts` + un logo in `assets/carriers/`):
-
-| Corriere | Codice 17TRACK |
+| Corriere | Modalità |
 |---|---|
-| Poste Italiane | 9071 |
-| BRT (Bartolini) | 100026 |
-| GLS | 100024 |
-| SDA Express Courier | 100019 |
-| DHL | 100001 |
-| UPS | 100002 |
-| FedEx | 100003 |
-| TNT | 100004 |
-| Amazon Logistics | 100308 |
+| UPS | 🟢 Tracking live |
+| FedEx | 🟢 Tracking live |
+| DHL | 🟢 Tracking live |
+| Poste Italiane | 🔗 Link al sito ufficiale |
+| BRT (Bartolini) | 🔗 Link al sito ufficiale |
+| GLS | 🔗 Link al sito ufficiale |
+| SDA Express Courier | 🔗 Link al sito ufficiale |
+| TNT | 🔗 Link al sito ufficiale (ormai rete FedEx) |
+| Amazon Logistics | 🔗 Link al sito ufficiale (richiede login Amazon) |
+| InPost | 🔗 Link al sito ufficiale |
+| Vinted Go | 🔗 Link al sito ufficiale |
 
-Codici incrociati con il file di riferimento pubblico 17TRACK (`apicarrier.all.json`) il 2026-08-17; 17TRACK lo aggiorna periodicamente, ri-verifica se un corriere smette di risolversi.
+Estendibile aggiungendo una voce in `src/config/carriers.ts` (+ un logo in `assets/carriers/`) — sia per un nuovo corriere "link al sito", sia per uno nuovo con API diretta gratuita (in tal caso serve anche un nuovo file in `src/api/providers/`).
 
-I loghi in `assets/carriers/` sono marchi delle rispettive aziende, scaricati da Wikimedia Commons e usati solo a scopo referenziale (identificare il corriere reale di ogni spedizione, come fa qualunque app di tracciamento) — dettagli e fonti in [`assets/carriers/NOTICE.md`](./assets/carriers/NOTICE.md). Prima di una pubblicazione non personale, sostituiscili con gli asset ufficiali dei rispettivi brand/press-kit.
+I loghi in `assets/carriers/` sono marchi delle rispettive aziende, scaricati da Wikimedia Commons e usati solo a scopo referenziale (identificare il corriere reale di ogni spedizione, come fa qualunque app di tracciamento) — dettagli e fonti in [`assets/carriers/NOTICE.md`](./assets/carriers/NOTICE.md). Vinted Go non ha un logo proprio distinto su Commons: viene usato il marchio Vinted (Vinted Go è il servizio di spedizione di Vinted stessa). Prima di una pubblicazione non personale, sostituisci questi loghi con gli asset ufficiali dei rispettivi brand/press-kit.
 
 ## Notifiche e controllo in background
 
 - Le notifiche sono **locali** (`expo-notifications`), programmate direttamente sul device — nessun server di push necessario, funzionano dentro Expo Go su Android e iOS.
-- `expo-background-task` interroga periodicamente 17TRACK per le sole spedizioni con notifiche attive, confronta lo stato con l'ultimo salvato (`src/notifications/statusDiff.ts`) e fa scattare una notifica se è cambiato.
+- `expo-background-task` interroga periodicamente UPS/FedEx/DHL per le sole spedizioni **con tracking live e notifiche attive**, confronta lo stato con l'ultimo salvato (`src/notifications/statusDiff.ts`) e fa scattare una notifica se è cambiato. Le spedizioni "link al sito" sono escluse automaticamente (non c'è nulla da interrogare).
 - **Limite onesto:** l'OS decide la cadenza, non è garantita — aspettati da qualche minuto a qualche ora tra un controllo e l'altro, non un aggiornamento istantaneo. È il prezzo per restare a costo zero senza un server che spinge notifiche push.
 - **Su Expo Go, il background task funziona in pratica solo su Android.** iOS richiede permessi (`BGTaskScheduler`) che il binario precompilato di Expo Go non può dichiarare; su iOS in Expo Go l'app si aggiornerà comunque quando la apri o fai pull-to-refresh, ma non mentre è chiusa. Per il background reale su iOS serve una development build (`npx expo prebuild` + Xcode, o EAS Build con un dev client) — è un upgrade successivo, non richiesto per testare il resto dell'app in Expo Go.
 
@@ -113,6 +120,10 @@ Il vero Liquid Glass di Apple (iOS 26, `expo-glass-effect`) è un'API nativa iOS
 `src/config/ads.ts` espone `ADS_ENABLED = false`. Il componente `src/components/AdSlot.tsx` legge questo flag e, se disattivato, non renderizza nulla — zero spazio, zero impatto visivo. Per attivarlo in futuro: imposta `ADS_ENABLED = true` e collega un SDK (es. Google AdMob) o un banner sponsor dentro `AdSlot`.
 
 **Prima di attivarlo davvero** in produzione: serve una Consent Management Platform per il consenso GDPR (obbligatorio in UE) e il rispetto delle policy pubblicitarie di Google Play.
+
+## Come funziona (dentro l'app)
+
+C'è un pulsante "i" in alto a sinistra nella home che apre una schermata con la spiegazione completa per l'utente finale: cos'è l'app, come aggiungere una spedizione, cosa significano le gesture di swipe, la differenza tra corrieri "tracking live" e "link al sito", i limiti delle notifiche in background, e l'elenco corrieri aggiornato in automatico da `src/config/carriers.ts`.
 
 ## Build per test su Google Play
 
@@ -136,37 +147,42 @@ Cambia `expo.android.package` / `expo.ios.bundleIdentifier` in `app.json` (attua
 
 ## Limitazioni note (riepilogo)
 
+- **Copertura corrieri:** solo UPS, FedEx e DHL hanno tracking live e notifiche automatiche — sono i soli con un'API gratuita self-service. Poste Italiane, BRT, GLS, SDA, TNT, Amazon Logistics, InPost e Vinted Go (tra i più usati per l'e-commerce in Italia) offrono solo un link al sito ufficiale, senza stato live né notifiche, perché nessuno di loro pubblica un'API gratuita senza contratto business.
 - **Ritardo notifiche in background:** non istantaneo, dipende dalla pianificazione del sistema operativo (minuti-ore); su iOS in Expo Go il background task di fatto non gira affatto (serve dev build).
-- **Chiave API:** l'opzione diretta-dal-client è estraibile da un APK decompilato; l'opzione proxy (consigliata, già implementata in `/server`) evita il problema ma richiede un piccolo deploy Cloudflare Workers separato.
-- **Quota 17TRACK:** i nuovi account hanno 200 crediti una tantum (non mensili) — verifica la tua situazione sul pannello 17TRACK.
-- **Parsing risposta 17TRACK non testato live:** scritto da documentazione pubblica, difensivo ma da riverificare con un account reale.
+- **Credenziali API:** l'opzione diretta-dal-client è estraibile da un APK decompilato; l'opzione proxy (consigliata, già implementata in `/server`) evita il problema ma richiede un piccolo deploy Cloudflare Workers separato.
+- **Parsing risposte UPS/FedEx/DHL non testato live:** scritto da documentazione pubblica, difensivo ma da riverificare con credenziali reali.
+- **DHL: 250 richieste/giorno gratis** (max 1 ogni 5 secondi) — sufficiente per uso personale ma da tenere a mente se aggiungi molte spedizioni DHL.
 - **Blur su Android:** `experimentalBlurMethod` di `expo-blur` è etichettato "experimental" da Expo stesso — può avere impatti di performance su liste lunghe.
 - **Icone app:** ancora quelle di default del template Expo; da sostituire prima di una pubblicazione reale.
+- **Link ai siti dei corrieri "external":** puntano alla pagina di ricerca spedizioni pubblica di ciascun corriere (verificate il 2026-08-17), ma nessuna prefilla il numero di tracking via URL — l'app lo copia negli appunti e tocca a te incollarlo. Amazon Logistics è un'eccezione: non esiste una pagina pubblica per codice, il link porta allo storico ordini e richiede login al tuo account Amazon.
 
 ## Scelte fatte in autonomia (dove il prompt era ambiguo)
 
+- **Solo API dirette dei corrieri, niente aggregatore** (17TRACK o simili): su richiesta esplicita di qualcosa di "gratis per sempre". Conseguenza diretta: solo UPS/FedEx/DHL hanno tracking live; gli altri corrieri diffusi in Italia (senza API self-service gratuita) restano nell'app come "link al sito ufficiale" invece di sparire — sembrava la via di mezzo più utile tra "niente aggregatore" e "lista corrieri dimezzata".
+- **TNT trattato come "link al sito FedEx"** invece che integrato con l'API FedEx diretta: TNT è stata assorbita dalla rete FedEx (da aprile 2025 non accetta più nuove registrazioni come piattaforma separata), ma non è stato possibile verificare con certezza che i vecchi codici di tracking TNT si risolvano sempre correttamente tramite l'API FedEx — per prudenza resta "link al sito" invece di rischiare falsi negativi silenziosi.
 - **Tema chiaro fisso** (`userInterfaceStyle: "light"`), niente dark mode: il brief chiedeva esplicitamente una "palette chiara e pulita" in stile Apple; costruire due temi non era richiesto e avrebbe raddoppiato il lavoro sull'estetica senza un requisito esplicito.
 - **Storico eventi salvato come colonna JSON** dentro la riga `shipments` in SQLite invece di una tabella separata: per il volume di dati di un tracker personale (poche spedizioni, decine di eventi ciascuna) una join non aggiunge valore, solo complessità.
-- **Un solo `register` per spedizione** (alla creazione), poi solo `gettrackinfo`: scelta per conservare la quota 17TRACK ora molto più stretta del previsto (vedi sopra), dato che la doc ufficiale segnala il register come idempotente/richiamabile ma non è gratis in termini di quota.
-- **Nessuna libreria aggiuntiva per generare ID** (niente `uuid`/`expo-crypto`): un generatore timestamp+random locale (`src/utils/id.ts`) basta per chiavi primarie locali non distribuite.
+- **Nessuna libreria aggiuntiva per generare ID** (niente `uuid`/`expo-crypto`): un generatore timestamp+random locale (`src/utils/id.ts`) basta per chiavi primarie locali non distribuite. Stesso criterio per il base64 usato nell'auth UPS (`src/utils/base64.ts`): React Native/Hermes non espone `btoa` come i browser, quindi un piccolo encoder locale evita una dipendenza in più.
 - **Swipe con gesture "aperta" persistente per riga** (ogni card gestisce il proprio stato, non c'è coordinamento "solo una aperta alla volta"): più semplice, comportamento comunque naturale per liste di questo tipo.
 - **Package/bundle id** impostati a `com.hyperfagianni.trackly` (dal repo di destinazione) — cambiali in `app.json` se preferisci altro.
 
 ## Struttura del progetto
 
 ```
-app/                    Schermate (Expo Router: home, add, dettaglio)
+app/                    Schermate (Expo Router: home, add, info, dettaglio)
 src/
-  api/                  Client HTTP 17TRACK + parsing risposte
+  api/
+    providers/          Client + parsing per ciascuna API diretta (ups, fedex, dhl)
+    trackingClient.ts    Dispatcher: sceglie il provider giusto in base al corriere
   background/           Task in background (expo-background-task)
   components/           UI riutilizzabile (card, glass, picker, timeline...)
-  config/               Corrieri curati, flag ads, env, metadati stato
+  config/               Corrieri curati (api/external), flag ads, env, metadati stato
   db/                    SQLite (schema + repository spedizioni)
   notifications/         Servizio notifiche + logica diff stato (testata)
   sync/                  Motore di sincronizzazione condiviso (refresh manuale + background)
   theme/                 Design tokens (colori, spaziature, tipografia)
   types/                 Tipi condivisi
-  utils/                 Formattazione date, id
-server/                 Cloudflare Worker proxy opzionale (consigliato) per la chiave 17TRACK
+  utils/                 Formattazione date, id, base64
+server/                 Cloudflare Worker proxy opzionale (consigliato) per le credenziali API
 assets/carriers/        Loghi corrieri + attribuzione
 ```

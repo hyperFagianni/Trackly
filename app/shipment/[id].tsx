@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { CarrierLogo } from '../../src/components/CarrierLogo';
 import { EventTimeline } from '../../src/components/EventTimeline';
 import { GlassCard } from '../../src/components/GlassCard';
 import { StatusBadge } from '../../src/components/StatusBadge';
-import { getCarrierById } from '../../src/config/carriers';
+import { getCarrierById, isApiCarrier } from '../../src/config/carriers';
 import { deleteShipment, getShipmentById, setNotificationsEnabled } from '../../src/db/shipmentsRepository';
 import { requestNotificationPermission } from '../../src/notifications/notificationService';
 import { syncShipments } from '../../src/sync/syncEngine';
@@ -21,6 +22,7 @@ export default function ShipmentDetailScreen() {
   const [shipment, setShipment] = useState<Shipment | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const carrier = shipment ? getCarrierById(shipment.carrierId) : undefined;
+  const live = carrier ? isApiCarrier(carrier) : false;
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -55,6 +57,12 @@ export default function ShipmentDetailScreen() {
     }
     await setNotificationsEnabled(shipment.id, value);
     setShipment({ ...shipment, notificationsEnabled: value });
+  };
+
+  const handleOpenExternalTracking = async () => {
+    if (!shipment || !carrier || isApiCarrier(carrier)) return;
+    await Clipboard.setStringAsync(shipment.trackingNumber);
+    await Linking.openURL(carrier.externalTrackingUrl);
   };
 
   const handleDelete = () => {
@@ -92,7 +100,7 @@ export default function ShipmentDetailScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />
+          live ? <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} /> : undefined
         }
       >
         <GlassCard contentStyle={styles.headerCard}>
@@ -100,24 +108,49 @@ export default function ShipmentDetailScreen() {
           <View style={styles.headerInfo}>
             <Text style={styles.trackingNumber}>{shipment.trackingNumber}</Text>
             <Text style={styles.carrierName}>{carrier?.name ?? shipment.carrierId}</Text>
-            <StatusBadge status={shipment.status} />
+            {live && <StatusBadge status={shipment.status} />}
           </View>
         </GlassCard>
 
-        <GlassCard contentStyle={styles.row}>
-          <View style={styles.rowInfo}>
-            <Text style={styles.rowTitle}>Notifiche</Text>
-            <Text style={styles.rowSubtitle}>Avvisami quando lo stato cambia</Text>
-          </View>
-          <Switch value={shipment.notificationsEnabled} onValueChange={handleToggleNotifications} trackColor={{ true: colors.accent }} />
-        </GlassCard>
+        {live ? (
+          <>
+            <GlassCard contentStyle={styles.row}>
+              <View style={styles.rowInfo}>
+                <Text style={styles.rowTitle}>Notifiche</Text>
+                <Text style={styles.rowSubtitle}>Avvisami quando lo stato cambia</Text>
+              </View>
+              <Switch
+                value={shipment.notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                trackColor={{ true: colors.accent }}
+              />
+            </GlassCard>
 
-        <Text style={styles.lastChecked}>Ultimo controllo: {formatRelativeTime(shipment.lastCheckedAt)}</Text>
+            <Text style={styles.lastChecked}>Ultimo controllo: {formatRelativeTime(shipment.lastCheckedAt)}</Text>
 
-        <GlassCard contentStyle={styles.timelineCard}>
-          <Text style={styles.sectionTitle}>Storico</Text>
-          <EventTimeline events={shipment.events} />
-        </GlassCard>
+            <GlassCard contentStyle={styles.timelineCard}>
+              <Text style={styles.sectionTitle}>Storico</Text>
+              <EventTimeline events={shipment.events} />
+            </GlassCard>
+          </>
+        ) : (
+          <GlassCard contentStyle={styles.externalCard}>
+            <Ionicons name="information-circle-outline" size={22} color={colors.textSecondary} />
+            <Text style={styles.externalTitle}>Tracking live non disponibile</Text>
+            <Text style={styles.externalBody}>
+              {carrier && 'note' in carrier && carrier.note
+                ? carrier.note
+                : `${carrier?.name ?? shipment.carrierId} non offre un'API di tracciamento gratuita senza un contratto business, quindi Trackly non può mostrare qui lo stato in tempo reale.`}
+            </Text>
+            <Pressable onPress={handleOpenExternalTracking} style={styles.externalButton}>
+              <Ionicons name="open-outline" size={18} color={colors.white} />
+              <Text style={styles.externalButtonText}>Apri il sito di {carrier?.name ?? 'il corriere'}</Text>
+            </Pressable>
+            <Text style={styles.externalHint}>
+              Il numero di tracking viene copiato negli appunti: incollalo nella pagina di ricerca del corriere.
+            </Text>
+          </GlassCard>
+        )}
       </ScrollView>
     </View>
   );
@@ -177,5 +210,38 @@ const styles = StyleSheet.create({
     ...typography.headline,
     color: colors.textPrimary,
     marginBottom: spacing.md,
+  },
+  externalCard: {
+    padding: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  externalTitle: {
+    ...typography.headline,
+    color: colors.textPrimary,
+  },
+  externalBody: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  externalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.accent,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    marginTop: spacing.xs,
+  },
+  externalButtonText: {
+    ...typography.headline,
+    color: colors.white,
+  },
+  externalHint: {
+    ...typography.small,
+    color: colors.textTertiary,
+    textAlign: 'center',
   },
 });

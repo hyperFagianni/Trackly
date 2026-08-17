@@ -35,6 +35,10 @@ export default function RootLayout() {
             name="add"
             options={{ title: 'Nuova spedizione', presentation: 'modal' }}
           />
+          <Stack.Screen
+            name="info"
+            options={{ title: 'Come funziona Trackly', presentation: 'modal' }}
+          />
           <Stack.Screen name="shipment/[id]" options={{ title: 'Dettaglio spedizione' }} />
         </Stack>
       </SafeAreaProvider>
