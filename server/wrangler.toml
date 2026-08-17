@@ -1,0 +1,7 @@
+name = "trackly-tracking-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-08-17"
+
+# Set the real secret with:
+#   npx wrangler secret put TRACK17_API_KEY
+# Never commit the actual key value anywhere in this repo.
