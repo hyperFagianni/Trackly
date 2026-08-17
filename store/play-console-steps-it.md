@@ -48,13 +48,22 @@ Segui [`data-safety-it.md`](./data-safety-it.md) categoria per categoria — per
 
 ## E. Contenuti dell'app — altre dichiarazioni obbligatorie
 
-Menu laterale → **Norme** → **Contenuti dell'app**, di solito include queste sotto-sezioni da completare tutte:
-- **Annunci**: dichiara che l'app **non contiene** pubblicità (per ora — `ADS_ENABLED=false`)
-- **Pubblico di destinazione e contenuti**: seleziona una fascia d'età generica per adulti/tutti, non un'app pensata specificamente per bambini
-- **Contenuti generati dagli utenti**: non applicabile
-- Le altre sezioni (COVID-19, contenuti governativi, ecc.) sono quasi certamente non applicabili — seleziona "No"/"Non applicabile" dove richiesto
+Menu laterale → **Norme** → **Contenuti dell'app**. Play Console non ti lascia procedere al rilascio finché ogni voce qui sotto non ha lo stato "Completato".
 
-Play Console non ti lascia procedere al rilascio finché tutte queste sezioni non hanno lo stato "Completato" nel pannello principale.
+**Fornire informazioni sui contenuti dell'app:**
+- **Configura le norme sulla privacy** → già fatto (l'URL GitHub Pages)
+- **Dettagli di accesso** → scegli "Tutte le funzionalità sono disponibili senza restrizioni di accesso" (No, l'app non richiede login/credenziali speciali — Trackly non ha account)
+- **Annunci** → **No, la mia app non contiene annunci** (vero oggi — `ADS_ENABLED=false`; se in futuro attivi la pubblicità andrà cambiato qui)
+- **Classificazione contenuti** → vedi sezione C sopra se non ancora fatto
+- **Pubblico di destinazione** → seleziona le fasce d'età che includono almeno "18+" (l'app non è pensata né progettata per bambini); alla domanda "L'app è rivolta principalmente ai bambini?" rispondi **No**
+- **Sicurezza dei dati** → vedi sezione D sopra
+- **App governative** → **No, la mia app non è un'app governativa**
+- **Funzionalità finanziarie** → **No** a tutte le domande (Trackly non gestisce pagamenti, prestiti, crypto, ecc.)
+- **Salute** → non applicabile, salta/rispondi **No** (Trackly non tratta dati sanitari)
+
+**Gestire il modo in cui l'app viene organizzata e presentata:**
+- **Seleziona una categoria di app e fornisci le informazioni di contatto** → Categoria: **Strumenti** (alternativa: Shopping); Email: la tua email di supporto; Sito web (facoltativo): puoi mettere il link del repo GitHub (`https://github.com/hyperFagianni/Trackly`) o lasciarlo vuoto; Telefono: facoltativo, lascialo vuoto se preferisci
+- **Configura la scheda dello Store** → è la sezione B sopra (se non ancora completata)
 
 ## F. Caricare l'AAB e avviare il test
 
