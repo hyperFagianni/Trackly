@@ -31,7 +31,11 @@
       "expo-font"
     ],
     "extra": {
-      "router": {}
-    }
+      "router": {},
+      "eas": {
+        "projectId": "be13dbcd-97d9-489f-b1c8-f47a3693b1b3"
+      }
+    },
+    "owner": "mattia.nico"
   }
 }

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trackly — Informativa sulla privacy</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 720px; margin: 0 auto; padding: 32px 20px 80px; color: #1c1c1e; line-height: 1.6; }
+  h1 { font-size: 28px; }
+  h2 { font-size: 19px; margin-top: 36px; }
+  p, li { font-size: 15px; color: #3a3a3c; }
+  .updated { color: #8e8e93; font-size: 13px; margin-bottom: 32px; }
+  a { color: #0a84ff; }
+  code { background: #f2f2f7; padding: 2px 6px; border-radius: 6px; font-size: 13px; }
+</style>
+</head>
+<body>
+  <h1>Informativa sulla privacy di Trackly</h1>
+  <p class="updated">Ultimo aggiornamento: 17 agosto 2026</p>
+
+  <p>Trackly è un'app per tracciare spedizioni di più corrieri in un'unica home. Questa pagina spiega, in modo semplice e diretto, quali dati l'app tratta e come.</p>
+
+  <h2>Dati che Trackly memorizza</h2>
+  <p>Le spedizioni che aggiungi (numero di tracking, corriere scelto, nome facoltativo che dai alla spedizione, stato e storico eventi) sono salvate <strong>solo sul tuo dispositivo</strong>, in un database locale (SQLite). Trackly non richiede account, login o registrazione, e non esiste alcun server che riceve o conserva una copia di queste informazioni.</p>
+  <p>Se disinstalli l'app o elimini una spedizione dall'app, quei dati vengono rimossi e non sono recuperabili altrove, perché non ne esiste altra copia.</p>
+
+  <h2>Dati inviati a terzi per il tracciamento</h2>
+  <p>Per mostrare lo stato aggiornato di una spedizione, Trackly invia il numero di tracking e il codice del corriere direttamente ai sistemi ufficiali del corriere interessato (UPS, FedEx o DHL), oppure — se configurato dallo sviluppatore — a un piccolo proxy server (Cloudflare Workers) che inoltra la stessa richiesta senza conservarla. Non viene inviato nessun altro dato personale: non il tuo nome, non la tua posizione, non un identificativo del tuo account.</p>
+  <p>Per i corrieri che non offrono un'API di tracciamento gratuita (es. Poste Italiane, BRT, GLS, SDA, InPost, Vinted Go, Amazon Logistics), Trackly non contatta alcun server: si limita ad aprire, quando lo richiedi tu, la pagina di tracciamento pubblica del sito ufficiale del corriere nel tuo browser.</p>
+
+  <h2>Notifiche</h2>
+  <p>Le notifiche sono generate <strong>localmente sul tuo dispositivo</strong> quando l'app rileva un cambiamento di stato in una spedizione. Non usiamo un servizio di notifiche push remoto, quindi nessun server esterno sa quali spedizioni segui o quando ricevi una notifica.</p>
+
+  <h2>Pubblicità e tracciamento</h2>
+  <p>Questa versione di Trackly <strong>non contiene pubblicità</strong> e non integra alcun SDK pubblicitario o di analisi/tracciamento del comportamento. Se in futuro dovesse essere introdotta pubblicità, questa informativa sarà aggiornata di conseguenza e verrà richiesto il consenso previsto dal GDPR prima di attivarla.</p>
+
+  <h2>Dati che Trackly NON raccoglie</h2>
+  <ul>
+    <li>Nessun account o profilo utente</li>
+    <li>Nessun dato di localizzazione</li>
+    <li>Nessun identificativo pubblicitario</li>
+    <li>Nessuna analisi del comportamento d'uso (analytics)</li>
+    <li>Nessuna condivisione di dati con terze parti a scopo pubblicitario</li>
+  </ul>
+
+  <h2>I tuoi diritti</h2>
+  <p>Poiché tutti i dati restano sul tuo dispositivo, hai il controllo diretto e completo su di essi in ogni momento: puoi eliminare una singola spedizione dall'app, oppure disinstallare l'app per rimuovere tutti i dati insieme.</p>
+
+  <h2>Contatti</h2>
+  <p>Per domande su questa informativa, scrivi a <a href="mailto:laciufola@gmail.com">laciufola@gmail.com</a>.</p>
+</body>
+</html>
