@@ -25,15 +25,8 @@ Le credenziali sono anche in `C:\Users\User\.gradle\gradle.properties` (fuori da
 ## Bloccato, serve tu
 - [ ] **Account sviluppatore Google Play**: fatto ✅ (mi hai detto di averlo già).
 - [ ] **Abilitare GitHub Pages** per l'informativa privacy: Settings del repo → Pages → Source: "Deploy from a branch" → Branch: `main`, cartella `/docs` → Save. L'URL sarà `https://hyperfagianni.github.io/Trackly/privacy.html`.
-- [ ] **Creare l'app in Play Console** e compilare:
-  - Scheda store: incolla da [`store/listing-it.md`](./listing-it.md)
-  - Sicurezza dei dati: segui [`store/data-safety-it.md`](./data-safety-it.md)
-  - Questionario classificazione contenuti: risposte guidate in `listing-it.md`
-  - URL informativa privacy: il link GitHub Pages qui sopra
-  - Feature graphic e icona: file già pronti in `store/` e `assets/`
-  - Screenshot: minimo 2 (consigliati 4-8) — mandameli quando li hai da un test reale sul telefono e li preparo/ritaglio
-- [ ] **Caricare `app-release.aab`** nel canale **Test interno** o **Test chiuso** — obbligatorio per i nuovi account sviluppatore personali prima della produzione
-- [ ] **Aggiungere te stesso/i tester** come tester email nel canale di test scelto
+- [ ] **Creare l'app in Play Console, compilare la scheda, e caricare l'AAB** — passi dettagliati punto per punto in [`store/play-console-steps-it.md`](./play-console-steps-it.md)
+- [ ] Screenshot: minimo 2 (consigliati 4-8) — mandameli quando li hai da un test reale sul telefono e li preparo/ritaglio
 
 ## Per le prossime build (dopo la prima release)
 Ora che JDK/Android SDK/keystore sono configurati su questo PC, per rigenerare l'AAB dopo modifiche al codice:
