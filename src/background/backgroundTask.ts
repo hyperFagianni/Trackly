@@ -1,5 +1,6 @@
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
+import { Platform } from 'react-native';
 import { getAllShipments } from '../db/shipmentsRepository';
 import { syncShipments } from '../sync/syncEngine';
 
@@ -31,6 +32,9 @@ TaskManager.defineTask(BACKGROUND_SYNC_TASK, async () => {
 });
 
 export async function registerBackgroundSyncAsync(): Promise<void> {
+  // No background-execution concept on web (no WorkManager/BGTaskScheduler
+  // equivalent) — the web build relies on manual pull-to-refresh instead.
+  if (Platform.OS === 'web') return;
   const alreadyRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_SYNC_TASK);
   if (alreadyRegistered) return;
   await BackgroundTask.registerTaskAsync(BACKGROUND_SYNC_TASK, {
@@ -39,6 +43,7 @@ export async function registerBackgroundSyncAsync(): Promise<void> {
 }
 
 export async function unregisterBackgroundSyncAsync(): Promise<void> {
+  if (Platform.OS === 'web') return;
   const alreadyRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_SYNC_TASK);
   if (alreadyRegistered) {
     await BackgroundTask.unregisterTaskAsync(BACKGROUND_SYNC_TASK);

@@ -15,6 +15,7 @@ Costruita per restare **gratuita per sempre**: zero aggregatori a quota limitata
 - `expo-clipboard` — copia il numero di tracking prima di aprire il sito di un corriere senza API
 - `@expo/vector-icons`, `expo-linking`, `expo-device`, `expo-font`, `expo-constants` — dipendenze di supporto standard dell'ecosistema Expo
 - API dirette di **UPS**, **FedEx** e **DHL** per il tracciamento live (nessun aggregatore terzo)
+- `react-dom` + `react-native-web` — build web (Vercel), stessa base di codice di Android/iOS
 
 **Tutte le librerie sopra funzionano dentro Expo Go** — nessuna richiede una development build. Verificato con `npx expo-doctor` (18/18 check superati) e con `npx tsc --noEmit` pulito.
 
@@ -144,6 +145,30 @@ npx expo prebuild
 Prima della pubblicazione in produzione su Google Play Console serve una fase di closed/internal testing (obbligatoria per i nuovi account sviluppatore personali).
 
 Cambia `expo.android.package` / `expo.ios.bundleIdentifier` in `app.json` (attualmente `com.hyperfagianni.trackly`) se vuoi un identificativo diverso, e sostituisci le icone in `assets/` (attualmente quelle di default del template Expo) con un'identità grafica tua prima di pubblicare.
+
+Materiali già pronti per la scheda Play Store (testo, Data Safety, feature graphic, checklist) in [`store/`](./store), informativa privacy pronta per GitHub Pages in [`docs/`](./docs).
+
+## App web (Vercel) — invece dell'account sviluppatore iOS
+
+Stessa base di codice, nessuna cartella duplicata: Expo Router esporta anche per il web con `npx expo export --platform web`. Verificato di persona (build + smoke test in un browser reale) che l'app gira su web praticamente senza modifiche:
+
+- **SQLite funziona anche su web** tramite l'implementazione WASM di `expo-sqlite` (bundle `wa-sqlite`) — richiede solo `metro.config.js` (già incluso) per far riconoscere a Metro i file `.wasm`, e gli header `Cross-Origin-Opener-Policy` / `Cross-Origin-Embedder-Policy` (necessari per la persistenza via OPFS) — già configurati sia nel dev server (`metro.config.js`) sia per il deploy (`vercel.json`).
+- Gesture di swipe, glass UI, carrier picker, tutto renderizza correttamente su web (`expo-blur`, `expo-linear-gradient`, `react-native-gesture-handler`/`reanimated` hanno tutti un'implementazione web).
+- **Compromesso onesto e inevitabile:** `expo-background-task` non ha un equivalente sul web (nessun concetto di "processo in background" per una pagina), quindi è disattivato lì (`Platform.OS === 'web'` in `src/background/backgroundTask.ts`) — la versione web si aggiorna con pull-to-refresh manuale, non con notifiche automatiche ad app chiusa. Avere anche lì notifiche push richiederebbe un server che le invia, in contrasto con l'ethos "gratis per sempre, zero server" di tutto il resto del progetto.
+
+### Deploy su Vercel (gratuito)
+
+Opzione consigliata — collega il repo GitHub direttamente dalla dashboard Vercel (redeploy automatico a ogni push):
+1. [vercel.com/new](https://vercel.com/new) → importa `hyperFagianni/Trackly`
+2. Vercel legge `vercel.json` da solo (build command, output dir, header COOP/COEP) — nessuna configurazione manuale necessaria
+3. Deploy
+
+Oppure da riga di comando:
+```bash
+npm install -g vercel
+vercel login
+vercel --prod
+```
 
 ## Limitazioni note (riepilogo)
 
