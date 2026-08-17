@@ -62,7 +62,7 @@ export default function ShipmentDetailScreen() {
   const handleOpenExternalTracking = async () => {
     if (!shipment || !carrier || isApiCarrier(carrier)) return;
     await Clipboard.setStringAsync(shipment.trackingNumber);
-    await Linking.openURL(carrier.externalTrackingUrl);
+    await Linking.openURL(carrier.buildTrackingUrl(shipment.trackingNumber));
   };
 
   const handleDelete = () => {
@@ -147,7 +147,9 @@ export default function ShipmentDetailScreen() {
               <Text style={styles.externalButtonText}>Apri il sito di {carrier?.name ?? 'il corriere'}</Text>
             </Pressable>
             <Text style={styles.externalHint}>
-              Il numero di tracking viene copiato negli appunti: incollalo nella pagina di ricerca del corriere.
+              {carrier && !isApiCarrier(carrier) && carrier.deepLinkSupported
+                ? 'Si aprirà direttamente la pagina della tua spedizione. Il numero resta comunque copiato negli appunti, per sicurezza.'
+                : 'Il sito di questo corriere non permette di aprire direttamente una spedizione: il numero di tracking viene copiato negli appunti, incollalo nella pagina di ricerca.'}
             </Text>
           </GlassCard>
         )}

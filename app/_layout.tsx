@@ -5,11 +5,19 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { registerBackgroundSyncAsync } from '../src/background/backgroundTask';
 import { getDatabase } from '../src/db/database';
 import { ensureNotificationChannel } from '../src/notifications/notificationService';
 import { colors } from '../src/theme/theme';
+
+// expo-notifications checks for remote-push usage on import and logs this via
+// console.error even though Trackly only ever calls local-notification APIs.
+// It's expected/harmless noise on Expo Go (SDK 53+ removed remote push there,
+// local notifications are unaffected) — see README "Notifiche e controllo in
+// background". Silenced so it doesn't surface as a full-screen LogBox error.
+LogBox.ignoreLogs(['expo-notifications: Android Push notifications']);
 
 export default function RootLayout() {
   useEffect(() => {
