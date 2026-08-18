@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -61,7 +60,6 @@ export default function ShipmentDetailScreen() {
 
   const handleOpenExternalTracking = async () => {
     if (!shipment || !carrier || isApiCarrier(carrier)) return;
-    await Clipboard.setStringAsync(shipment.trackingNumber);
     await Linking.openURL(carrier.buildTrackingUrl(shipment.trackingNumber));
   };
 
@@ -148,8 +146,8 @@ export default function ShipmentDetailScreen() {
             </Pressable>
             <Text style={styles.externalHint}>
               {carrier && !isApiCarrier(carrier) && carrier.deepLinkSupported
-                ? 'Si aprirà direttamente la pagina della tua spedizione. Il numero resta comunque copiato negli appunti, per sicurezza.'
-                : 'Il sito di questo corriere non permette di aprire direttamente una spedizione: il numero di tracking viene copiato negli appunti, incollalo nella pagina di ricerca.'}
+                ? 'Si aprirà direttamente la pagina della tua spedizione.'
+                : 'Il sito di questo corriere non permette di aprire direttamente una spedizione: incolla il numero di tracking nella pagina di ricerca.'}
             </Text>
           </GlassCard>
         )}
