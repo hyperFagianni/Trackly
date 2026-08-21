@@ -1,6 +1,7 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CARRIERS, isApiCarrier } from '../config/carriers';
-import { colors, radii, spacing, typography } from '../theme/theme';
+import { colors, glassSheenColors, radii, softShadow, spacing, typography } from '../theme/theme';
 
 interface CarrierPickerProps {
   selectedId: string | null;
@@ -19,6 +20,14 @@ export function CarrierPicker({ selectedId, onSelect }: CarrierPickerProps) {
             onPress={() => onSelect(carrier.id)}
             style={[styles.chip, selected && styles.chipSelected]}
           >
+            {selected && (
+              <LinearGradient
+                colors={glassSheenColors}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 1, y: 0 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+            )}
             <Image source={carrier.logo} style={styles.logo} resizeMode="contain" />
             <Text style={[styles.label, selected && styles.labelSelected]} numberOfLines={1}>
               {carrier.name}
@@ -52,10 +61,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.sm,
     gap: spacing.xs,
+    overflow: 'hidden',
   },
   chipSelected: {
     borderColor: colors.accent,
     backgroundColor: '#EAF4FF',
+    ...softShadow,
   },
   logo: {
     width: '70%',

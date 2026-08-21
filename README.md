@@ -144,7 +144,7 @@ npx expo prebuild
 
 Prima della pubblicazione in produzione su Google Play Console serve una fase di closed/internal testing (obbligatoria per i nuovi account sviluppatore personali).
 
-Cambia `expo.android.package` / `expo.ios.bundleIdentifier` in `app.json` (attualmente `com.hyperfagianni.trackly`) se vuoi un identificativo diverso, e sostituisci le icone in `assets/` (attualmente quelle di default del template Expo) con un'identità grafica tua prima di pubblicare.
+Cambia `expo.android.package` / `expo.ios.bundleIdentifier` in `app.json` (attualmente `com.hyperfagianni.trackly`) se vuoi un identificativo diverso prima di pubblicare — le icone in `assets/` sono già la tua identità grafica, non più quelle di default del template Expo.
 
 Materiali già pronti per la scheda Play Store (testo, Data Safety, feature graphic, checklist) in [`store/`](./store), informativa privacy pronta per GitHub Pages in [`docs/`](./docs).
 
@@ -155,6 +155,7 @@ Stessa base di codice, nessuna cartella duplicata: Expo Router esporta anche per
 - **SQLite funziona anche su web** tramite l'implementazione WASM di `expo-sqlite` (bundle `wa-sqlite`) — richiede solo `metro.config.js` (già incluso) per far riconoscere a Metro i file `.wasm`, e gli header `Cross-Origin-Opener-Policy` / `Cross-Origin-Embedder-Policy` (necessari per la persistenza via OPFS) — già configurati sia nel dev server (`metro.config.js`) sia per il deploy (`vercel.json`).
 - Gesture di swipe, glass UI, carrier picker, tutto renderizza correttamente su web (`expo-blur`, `expo-linear-gradient`, `react-native-gesture-handler`/`reanimated` hanno tutti un'implementazione web).
 - **Compromesso onesto e inevitabile:** `expo-background-task` non ha un equivalente sul web (nessun concetto di "processo in background" per una pagina), quindi è disattivato lì (`Platform.OS === 'web'` in `src/background/backgroundTask.ts`) — la versione web si aggiorna con pull-to-refresh manuale, non con notifiche automatiche ad app chiusa. Avere anche lì notifiche push richiederebbe un server che le invia, in contrasto con l'ethos "gratis per sempre, zero server" di tutto il resto del progetto.
+- **Icona corretta anche su "Aggiungi a Home" (iOS/Android/desktop)**: `app/+html.tsx` inietta `manifest.json` + `apple-touch-icon`/icone (in `public/`, generate dalla stessa `assets/icon.png` usata per lo store) nell'head della pagina, così chi salva Trackly sulla home da Safari/Chrome vede il logo reale invece di uno screenshot generico. Richiede `web.output: "static"` in `app.json` — Expo Router ignora `+html.tsx` nel default `"single"` (SPA) — ma non cambia il routing lato client: `vercel.json` reindirizza comunque tutto su `index.html`.
 
 ### Deploy su Vercel (gratuito)
 
@@ -178,7 +179,6 @@ vercel --prod
 - **Parsing risposte UPS/FedEx/DHL non testato live:** scritto da documentazione pubblica, difensivo ma da riverificare con credenziali reali.
 - **DHL: 250 richieste/giorno gratis** (max 1 ogni 5 secondi) — sufficiente per uso personale ma da tenere a mente se aggiungi molte spedizioni DHL.
 - **Blur su Android:** `experimentalBlurMethod` di `expo-blur` è etichettato "experimental" da Expo stesso — può avere impatti di performance su liste lunghe.
-- **Icone app:** ancora quelle di default del template Expo; da sostituire prima di una pubblicazione reale.
 - **Link ai siti dei corrieri "external":** puntano alla pagina di ricerca spedizioni pubblica di ciascun corriere (verificate il 2026-08-17), ma nessuna prefilla il numero di tracking via URL — l'app lo copia negli appunti e tocca a te incollarlo. Amazon Logistics è un'eccezione: non esiste una pagina pubblica per codice, il link porta allo storico ordini e richiede login al tuo account Amazon.
 
 ## Scelte fatte in autonomia (dove il prompt era ambiguo)

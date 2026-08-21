@@ -2,16 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Linking, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { CarrierLogo } from '../../src/components/CarrierLogo';
 import { EventTimeline } from '../../src/components/EventTimeline';
+import { GlassButton } from '../../src/components/GlassButton';
 import { GlassCard } from '../../src/components/GlassCard';
 import { StatusBadge } from '../../src/components/StatusBadge';
 import { getCarrierById, isApiCarrier } from '../../src/config/carriers';
 import { deleteShipment, getShipmentById, setNotificationsEnabled } from '../../src/db/shipmentsRepository';
 import { requestNotificationPermission } from '../../src/notifications/notificationService';
 import { syncShipments } from '../../src/sync/syncEngine';
-import { colors, radii, spacing, typography } from '../../src/theme/theme';
+import { colors, spacing, typography } from '../../src/theme/theme';
 import type { Shipment } from '../../src/types/shipment';
 import { formatRelativeTime } from '../../src/utils/format';
 
@@ -89,9 +90,9 @@ export default function ShipmentDetailScreen() {
         options={{
           title: shipment.label || shipment.trackingNumber,
           headerRight: () => (
-            <Pressable onPress={handleDelete} hitSlop={12}>
-              <Ionicons name="trash-outline" size={22} color={colors.danger} />
-            </Pressable>
+            <GlassButton onPress={handleDelete} shape="circle" size={34} tone="danger" hitSlop={8}>
+              <Ionicons name="trash-outline" size={17} color={colors.white} />
+            </GlassButton>
           ),
         }}
       />
@@ -140,10 +141,10 @@ export default function ShipmentDetailScreen() {
                 ? carrier.note
                 : `${carrier?.name ?? shipment.carrierId} non offre un'API di tracciamento gratuita senza un contratto business, quindi Trackly non può mostrare qui lo stato in tempo reale.`}
             </Text>
-            <Pressable onPress={handleOpenExternalTracking} style={styles.externalButton}>
+            <GlassButton onPress={handleOpenExternalTracking} style={styles.externalButtonWrap}>
               <Ionicons name="open-outline" size={18} color={colors.white} />
               <Text style={styles.externalButtonText}>Apri il sito di {carrier?.name ?? 'il corriere'}</Text>
-            </Pressable>
+            </GlassButton>
             <Text style={styles.externalHint}>
               {carrier && !isApiCarrier(carrier) && carrier.deepLinkSupported
                 ? 'Si aprirà direttamente la pagina della tua spedizione.'
@@ -225,14 +226,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
-  externalButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.accent,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+  externalButtonWrap: {
     marginTop: spacing.xs,
   },
   externalButtonText: {

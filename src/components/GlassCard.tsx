@@ -1,7 +1,8 @@
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import type { PropsWithChildren } from 'react';
 import { Platform, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
-import { cardShadow, colors, radii } from '../theme/theme';
+import { cardShadow, colors, glassHighlightColors, glassSheenColors, radii } from '../theme/theme';
 
 interface GlassCardProps {
   style?: StyleProp<ViewStyle>;
@@ -12,9 +13,10 @@ interface GlassCardProps {
 
 /**
  * Simulated "liquid glass" surface for Expo Go / Android compatibility: a
- * blurred, semi-transparent panel with a light border and soft shadow. Real
- * native glass (expo-glass-effect on iOS 26) is a dev-client-only upgrade —
- * see README section on aesthetics.
+ * blurred, semi-transparent panel with a light border, a diagonal iridescent
+ * sheen (as if sunlight were catching the glass edge) and a soft 3D shadow.
+ * Real native glass (expo-glass-effect on iOS 26) is a dev-client-only
+ * upgrade — see README section on aesthetics.
  *
  * Split into an outer shadow-only view and an inner overflow:hidden view
  * because iOS drops the shadow entirely on a view that also clips its content.
@@ -30,6 +32,18 @@ export function GlassCard({ children, style, contentStyle, radius = radii.lg, in
           style={StyleSheet.absoluteFill}
         />
         <View style={styles.tintOverlay} />
+        <LinearGradient
+          colors={glassSheenColors}
+          start={{ x: 0, y: 1 }}
+          end={{ x: 1, y: 0.15 }}
+          style={styles.sheen}
+        />
+        <LinearGradient
+          colors={glassHighlightColors}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 0.4, y: 0.7 }}
+          style={styles.topHighlight}
+        />
         <View style={contentStyle}>{children}</View>
       </View>
     </View>
@@ -46,5 +60,12 @@ const styles = StyleSheet.create({
   tintOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  sheen: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.5,
+  },
+  topHighlight: {
+    ...StyleSheet.absoluteFillObject,
   },
 });

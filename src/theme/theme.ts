@@ -42,11 +42,11 @@ export const typography = {
 };
 
 export const cardShadow = {
-  shadowColor: '#3A4A63',
-  shadowOffset: { width: 0, height: 8 },
-  shadowOpacity: 0.12,
-  shadowRadius: 20,
-  elevation: 6,
+  shadowColor: '#2B4A75',
+  shadowOffset: { width: 0, height: 10 },
+  shadowOpacity: 0.16,
+  shadowRadius: 22,
+  elevation: 7,
 };
 
 export const softShadow = {
@@ -55,4 +55,33 @@ export const softShadow = {
   shadowOpacity: 0.08,
   shadowRadius: 8,
   elevation: 3,
+};
+
+// "Liquid glass" surface: a diagonal iridescent sheen (as if sunlight were
+// refracting through glass) plus a glossy top highlight, layered on cards
+// and buttons on top of their base fill/blur — see GlassCard and GlassButton.
+export const glassSheenColors = [
+  'rgba(255,208,235,0.5)',
+  'rgba(255,241,189,0.38)',
+  'rgba(201,255,224,0.32)',
+  'rgba(196,225,255,0.42)',
+  'rgba(224,201,255,0.4)',
+] as const;
+
+export const glassHighlightColors = ['rgba(255,255,255,0.65)', 'rgba(255,255,255,0)'] as const;
+
+export const buttonShadow = {
+  shadowColor: '#17325C',
+  shadowOffset: { width: 0, height: 10 },
+  shadowOpacity: 0.3,
+  shadowRadius: 16,
+  elevation: 10,
+};
+
+export const buttonShadowPressed = {
+  shadowColor: '#17325C',
+  shadowOffset: { width: 0, height: 3 },
+  shadowOpacity: 0.18,
+  shadowRadius: 6,
+  elevation: 4,
 };

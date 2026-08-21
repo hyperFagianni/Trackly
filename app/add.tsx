@@ -5,7 +5,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,11 +13,12 @@ import {
 } from 'react-native';
 import { fetchTrackingForShipment } from '../src/api/trackingClient';
 import { CarrierPicker } from '../src/components/CarrierPicker';
+import { GlassButton } from '../src/components/GlassButton';
 import { GlassCard } from '../src/components/GlassCard';
 import { getCarrierById, isApiCarrier } from '../src/config/carriers';
 import { insertShipment, updateTrackingResult } from '../src/db/shipmentsRepository';
 import { requestNotificationPermission } from '../src/notifications/notificationService';
-import { colors, radii, spacing, typography } from '../src/theme/theme';
+import { colors, spacing, typography } from '../src/theme/theme';
 
 export default function AddShipmentScreen() {
   const router = useRouter();
@@ -96,13 +96,9 @@ export default function AddShipmentScreen() {
         </ScrollView>
 
         <View style={styles.footer}>
-          <Pressable
-            onPress={handleSave}
-            disabled={!canSave}
-            style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}
-          >
+          <GlassButton onPress={handleSave} disabled={!canSave}>
             <Text style={styles.saveButtonText}>{saving ? 'Salvataggio…' : 'Aggiungi spedizione'}</Text>
-          </Pressable>
+          </GlassButton>
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -139,15 +135,6 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: spacing.lg,
-  },
-  saveButton: {
-    backgroundColor: colors.accent,
-    borderRadius: radii.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    backgroundColor: colors.neutral,
   },
   saveButtonText: {
     ...typography.headline,

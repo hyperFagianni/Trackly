@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdSlot } from '../src/components/AdSlot';
 import { EmptyState } from '../src/components/EmptyState';
+import { GlassButton } from '../src/components/GlassButton';
 import { ShipmentCard } from '../src/components/ShipmentCard';
 import { deleteShipment, getAllShipments, setNotificationsEnabled } from '../src/db/shipmentsRepository';
 import { requestNotificationPermission } from '../src/notifications/notificationService';
@@ -67,14 +68,14 @@ export default function HomeScreen() {
       <Stack.Screen
         options={{
           headerLeft: () => (
-            <Pressable onPress={() => router.push('/info')} hitSlop={12} style={styles.iconButton}>
-              <Ionicons name="information-circle-outline" size={26} color={colors.textSecondary} />
-            </Pressable>
+            <GlassButton onPress={() => router.push('/info')} shape="circle" size={34} tone="neutral" hitSlop={8}>
+              <Ionicons name="information" size={16} color={colors.textSecondary} />
+            </GlassButton>
           ),
           headerRight: () => (
-            <Pressable onPress={() => router.push('/add')} hitSlop={12} style={styles.iconButton}>
-              <Ionicons name="add-circle" size={30} color={colors.accent} />
-            </Pressable>
+            <GlassButton onPress={() => router.push('/add')} shape="circle" size={36} tone="accent" hitSlop={8}>
+              <Ionicons name="add" size={20} color={colors.white} />
+            </GlassButton>
           ),
         }}
       />
@@ -104,7 +105,6 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  iconButton: { padding: spacing.xs },
   listContent: {
     padding: spacing.lg,
     flexGrow: 1,
