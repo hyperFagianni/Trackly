@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Linking, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { CarrierLogo } from '../../src/components/CarrierLogo';
 import { EventTimeline } from '../../src/components/EventTimeline';
 import { GlassButton } from '../../src/components/GlassButton';
@@ -14,6 +14,7 @@ import { requestNotificationPermission } from '../../src/notifications/notificat
 import { syncShipments } from '../../src/sync/syncEngine';
 import { colors, spacing, typography } from '../../src/theme/theme';
 import type { Shipment } from '../../src/types/shipment';
+import { confirmAction } from '../../src/utils/confirm';
 import { formatRelativeTime } from '../../src/utils/format';
 
 export default function ShipmentDetailScreen() {
@@ -66,17 +67,18 @@ export default function ShipmentDetailScreen() {
 
   const handleDelete = () => {
     if (!shipment) return;
-    Alert.alert('Eliminare la spedizione?', `${carrier?.name ?? shipment.carrierId} · ${shipment.trackingNumber}`, [
-      { text: 'Annulla', style: 'cancel' },
+    confirmAction(
       {
-        text: 'Elimina',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteShipment(shipment.id);
-          router.back();
-        },
+        title: 'Eliminare la spedizione?',
+        message: `${carrier?.name ?? shipment.carrierId} · ${shipment.trackingNumber}`,
+        confirmLabel: 'Elimina',
+        destructive: true,
       },
-    ]);
+      async () => {
+        await deleteShipment(shipment.id);
+        router.back();
+      },
+    );
   };
 
   if (!shipment) {

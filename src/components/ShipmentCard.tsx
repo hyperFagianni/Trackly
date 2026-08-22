@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { getCarrierById, isApiCarrier } from '../config/carriers';
 import { colors, radii, spacing, typography } from '../theme/theme';
 import type { Shipment } from '../types/shipment';
+import { confirmAction } from '../utils/confirm';
 import { formatRelativeTime } from '../utils/format';
 import { CarrierLogo } from './CarrierLogo';
 import { GlassCard } from './GlassCard';
@@ -36,10 +37,16 @@ export function ShipmentCard({ shipment, onPress, onDelete, onToggleNotification
   };
 
   const confirmDelete = () => {
-    Alert.alert('Eliminare la spedizione?', `${carrierName} · ${shipment.trackingNumber}`, [
-      { text: 'Annulla', style: 'cancel', onPress: () => close() },
-      { text: 'Elimina', style: 'destructive', onPress: onDelete },
-    ]);
+    confirmAction(
+      {
+        title: 'Eliminare la spedizione?',
+        message: `${carrierName} · ${shipment.trackingNumber}`,
+        confirmLabel: 'Elimina',
+        destructive: true,
+      },
+      onDelete,
+      close,
+    );
   };
 
   const handleToggleNotifications = () => {
